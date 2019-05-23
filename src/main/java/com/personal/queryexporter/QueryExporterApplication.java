@@ -4,6 +4,7 @@ import com.personal.queryexporter.core.ExcelExporter;
 import com.personal.queryexporter.model.Report;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.PropertySource;
 
@@ -22,9 +23,7 @@ public class QueryExporterApplication {
     }
 
     public static void main(String[] args) {
-        AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
-        ctx.register(QueryExporterApplication.class);
-        ctx.refresh();
+        ApplicationContext ctx = new AnnotationConfigApplicationContext(QueryExporterApplication.class);
         QueryExporterApplication app = ctx.getBean(QueryExporterApplication.class);
         app.run();
     }
