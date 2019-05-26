@@ -10,7 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.io.FileOutputStream;
@@ -40,7 +39,6 @@ public class ExcelExporterImpl implements ExcelExporter {
     }
 
     @Override
-    @Async
     public void processReport(Report report) {
         LOGGER.info("------START EXPORTING QUERY------");
         int rowCount = 0;
@@ -48,6 +46,7 @@ public class ExcelExporterImpl implements ExcelExporter {
         try (Connection conn = databaseConfig.dataSource().getConnection(); PreparedStatement ps = conn.prepareStatement(countQuery)) {
             this.setQueryParameters(report, ps);
             try (ResultSet rs = ps.executeQuery()) {
+                rs.next();
                 rowCount = rs.getInt(TOTAL);
             }
         } catch (SQLException e) {
@@ -58,14 +57,16 @@ public class ExcelExporterImpl implements ExcelExporter {
     }
 
     private void generateReport(Report report, int rowCount) {
-        int row = 1;
+        int row = 0;
         int loop;
+        String fileName = report.getFileName();
+        String query = report.getQuery();
         if (0 != rowCount) {
-            loop = (int) Math.ceil((float) rowCount / (float) rowLimit);
+            loop = (int) Math.ceil((double) rowCount / rowLimit);
             for (int i = 0; i < loop; i++) {
-                report.setQuery(Utility.rowQueryBuilder(report.getQuery(), String.valueOf(row), String.valueOf(row + rowLimit)));
-                row += rowLimit + 1;
-                report.setFileName(report.getFileName().concat(UNDERSCORE).concat(String.valueOf(i + 1)));
+                report.setQuery(Utility.rowQueryBuilder(query, String.valueOf(row + 1), String.valueOf(row + rowLimit)));
+                row += rowLimit;
+                report.setFileName(fileName.concat(UNDERSCORE).concat(String.valueOf(i + 1)));
                 this.export(report);
             }
         }
