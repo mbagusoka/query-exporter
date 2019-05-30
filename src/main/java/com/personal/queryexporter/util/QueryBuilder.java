@@ -1,15 +1,15 @@
 package com.personal.queryexporter.util;
 
-public class Utility {
+public final class QueryBuilder {
 
     private static final String PRE_COUNT = "select count(*) total from ( ";
     private static final String POST_COUNT = " )";
-    private static final String PRE_ROW = "select * from (";
-    private static final String MIDDLE_ROW = " ) where rownum between ";
+    private static final String PRE_ROW = "select * from ( select rownum no, a.* from ( ";
+    private static final String MIDDLE_ROW = " ) a ) where no between ";
     private static final String POST_ROW = " and ";
 
-    private Utility() {
-        throw new IllegalAccessError("Utility Class");
+    private QueryBuilder() {
+        throw new IllegalAccessError("QueryBuilder Class");
     }
 
     public static String countQueryBuilder(String query) {
