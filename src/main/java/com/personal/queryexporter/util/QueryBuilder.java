@@ -9,7 +9,7 @@ public final class QueryBuilder {
     private static final String POST_ROW = " and ";
 
     private QueryBuilder() {
-        throw new IllegalAccessError("QueryBuilder Class");
+        throw new IllegalAccessError("Util Class");
     }
 
     public static String countQueryBuilder(String query) {

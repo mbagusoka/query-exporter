@@ -1,5 +1,7 @@
 package com.personal.queryexporter.core.impl;
 
+import com.personal.queryexporter.common.constant.ExporterConstants;
+import com.personal.queryexporter.common.service.ZipService;
 import com.personal.queryexporter.config.DatabaseConfig;
 import com.personal.queryexporter.core.ExcelExporter;
 import com.personal.queryexporter.model.Report;
@@ -11,9 +13,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.sql.*;
+import java.util.*;
 
 @Service
 public class ExcelExporterImpl implements ExcelExporter {
@@ -25,15 +29,17 @@ public class ExcelExporterImpl implements ExcelExporter {
     private static final String UNDERSCORE = "_";
 
     private final DatabaseConfig databaseConfig;
+    private final ZipService zipService;
 
     @Autowired
-    public ExcelExporterImpl(DatabaseConfig databaseConfig) {
+    public ExcelExporterImpl(DatabaseConfig databaseConfig, ZipService zipService) {
         this.databaseConfig = databaseConfig;
+        this.zipService = zipService;
     }
 
     @Override
     public void processReport(Report report) {
-        LOGGER.info("------START EXPORTING QUERY------");
+        LOGGER.info("------START EXPORTING QUERY------ {}", Calendar.getInstance().getTime());
         int rowCount = 0;
         String countQuery = QueryBuilder.countQueryBuilder(report.getQuery());
         try (Connection conn = databaseConfig.dataSource().getConnection(); PreparedStatement ps = conn.prepareStatement(countQuery)) {
@@ -49,7 +55,7 @@ public class ExcelExporterImpl implements ExcelExporter {
         } else {
             LOGGER.info("There is no record with this query.");
         }
-        LOGGER.info("------END EXPORTING QUERY------");
+        LOGGER.info("------END EXPORTING QUERY------ {}", Calendar.getInstance().getTime());
     }
 
     private void generateReport(Report report, int rowCount) {
@@ -58,6 +64,7 @@ public class ExcelExporterImpl implements ExcelExporter {
         String fileName = report.getFileName();
         String query = report.getQuery();
         int rowLimit = report.getRowLimit();
+        List<File> files = new ArrayList<>();
         if (0 != rowCount) {
             loop = (int) Math.ceil((double) rowCount / rowLimit);
             for (int i = 0; i < loop; i++) {
@@ -65,7 +72,9 @@ public class ExcelExporterImpl implements ExcelExporter {
                 row += rowLimit;
                 report.setFileName(fileName.concat(UNDERSCORE).concat(String.valueOf(i + 1)));
                 this.export(report);
+                files.add(new File(report.getPathOutput().concat(report.getFileName()).concat(XLS)));
             }
+            this.zipFiles(report, files, fileName);
         }
     }
 
@@ -104,7 +113,6 @@ public class ExcelExporterImpl implements ExcelExporter {
             ResultSetMetaData metaData = rs.getMetaData();
             for (int i = 0; i < metaData.getColumnCount() - 1; i++) {
                 row.createCell(i).setCellValue(rs.getString(metaData.getColumnLabel(i + 2)));
-                sheet.autoSizeColumn(i);
             }
             rowCount++;
         }
@@ -116,5 +124,17 @@ public class ExcelExporterImpl implements ExcelExporter {
         CellStyle style = workbook.createCellStyle();
         style.setFont(boldFont);
         return style;
+    }
+
+    private void zipFiles(Report report, List<File> files, String fileName) {
+        if (report.isZipFlag()) {
+            Map<String, Object> params = new HashMap<>();
+            params.put(ExporterConstants.FILES, files);
+            params.put(ExporterConstants.FILE_PATH, report.getPathOutput().concat(fileName));
+            if (report.isPasswordFlag()) {
+                params.put(ExporterConstants.PASS_KEY, report.getPassword());
+            }
+            zipService.zip(params);
+        }
     }
 }

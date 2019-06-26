@@ -36,6 +36,7 @@
             <version>12.1.0.2</version>
         </dependency>
 
+        <!--Excel Library-->
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-ooxml</artifactId>
@@ -57,6 +58,13 @@
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
             <version>2.11.2</version>
+        </dependency>
+
+        <!--Zip Library-->
+        <dependency>
+            <groupId>net.lingala.zip4j</groupId>
+            <artifactId>zip4j</artifactId>
+            <version>1.3.3</version>
         </dependency>
     </dependencies>
 

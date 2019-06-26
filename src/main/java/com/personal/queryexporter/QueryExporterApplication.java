@@ -1,5 +1,6 @@
 package com.personal.queryexporter;
 
+import com.personal.queryexporter.common.constant.ExporterConstants;
 import com.personal.queryexporter.core.ExcelExporter;
 import com.personal.queryexporter.model.Report;
 import org.slf4j.Logger;
@@ -14,6 +15,7 @@ import java.util.Scanner;
 
 @SpringBootApplication
 @PropertySource("classpath:application.properties")
+@SuppressWarnings("squid:S106")
 public class QueryExporterApplication {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(QueryExporterApplication.class);
@@ -32,6 +34,7 @@ public class QueryExporterApplication {
     }
 
     private void run() {
+        LOGGER.info("------QUERY EXPORTER APPLICATION STARTED------");
         try (Scanner scanner = new Scanner(System.in)) {
             boolean next = true;
             Report report;
@@ -41,10 +44,18 @@ public class QueryExporterApplication {
                 report.setQuery(this.getQuery(scanner));
                 System.out.println("Please enter row limit: ");
                 report.setRowLimit(Integer.parseInt(scanner.nextLine()));
-                System.out.println("Please enter a desired filename: ");
-                report.setFileName(scanner.nextLine());
                 System.out.println("Please enter a path output: ");
                 report.setPathOutput(scanner.nextLine());
+                System.out.println("Please enter a desired filename: ");
+                report.setFileName(scanner.nextLine());
+                report.setZipFlag(this.zipFlag(scanner));
+                if (report.isZipFlag()) {
+                    report.setPasswordFlag(this.passwordFlag(scanner));
+                }
+                if (report.isPasswordFlag()) {
+                    System.out.println("Enter the desired password: ");
+                    report.setPassword(scanner.nextLine());
+                }
                 System.out.println("Proceed with this current setup? Y/N ");
                 if ("Y".equalsIgnoreCase(scanner.nextLine())) {
                     System.out.println("Please wait while your query been exported. ");
@@ -57,6 +68,7 @@ public class QueryExporterApplication {
         } catch (Exception e) {
             LOGGER.error("Query Exporter Exception: ", e);
         }
+        LOGGER.info("------QUERY EXPORTER APPLICATION ENDED------");
     }
 
     private String getQuery(Scanner scanner) {
@@ -69,19 +81,36 @@ public class QueryExporterApplication {
             }
             query.append(line).append("\n");
         }
-        return query.toString();
+        return query.toString().replaceAll(";", "");
+    }
+
+    private boolean zipFlag(Scanner scanner) {
+        System.out.println("Do you want to zip the generated files? Y/N ");
+        String answer = scanner.nextLine();
+        return this.answerValidation(scanner, answer);
     }
 
     private boolean nextValidation(Scanner scanner) {
         System.out.println("Do you want to export again? Y/N ");
         String answer = scanner.nextLine();
-        if ("Y".equalsIgnoreCase(answer)) {
+        return this.answerValidation(scanner, answer);
+    }
+
+    private boolean passwordFlag(Scanner scanner) {
+        System.out.println("Do you want to give a password to the zipped files? Y/N ");
+        String answer = scanner.nextLine();
+        return this.answerValidation(scanner, answer);
+    }
+
+    private boolean answerValidation(Scanner scanner, String answer) {
+        if (ExporterConstants.YES.equalsIgnoreCase(answer)) {
             return true;
-        } else if ("N".equalsIgnoreCase(answer)) {
+        } else if (ExporterConstants.NO.equalsIgnoreCase(answer)) {
             return false;
         } else {
-            System.out.println("Input either with Y or N. ");
-            return this.nextValidation(scanner);
+            System.out.println("Input either with Y or N: ");
+            String answerValid = scanner.nextLine();
+            return this.answerValidation(scanner, answerValid);
         }
     }
 }
