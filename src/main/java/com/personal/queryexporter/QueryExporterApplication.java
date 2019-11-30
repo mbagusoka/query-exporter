@@ -81,7 +81,7 @@ public class QueryExporterApplication {
             }
             query.append(line).append("\n");
         }
-        return query.toString().replaceAll(";", "");
+        return query.toString().replace(";", "");
     }
 
     private boolean zipFlag(Scanner scanner) {
